@@ -11,11 +11,12 @@ Parse.Cloud.define("saveStripeCustomerIdAndCharge", function (request, response)
 Stripe.customers.create({
   source: request.params.token,
   email: request.params.email
-  }, function(err, charge) {
+  }, function(err, success) {
         if (err) {
             response.error(err)
         } else {
-            response.success(charge)
+            response.success(success)
+
         }
 
 }).then(function (customer) {
