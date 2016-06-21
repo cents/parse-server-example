@@ -3,8 +3,8 @@
 //Stripe.initialize('sk_test_ePDSBK4YqUagVl3dkjzjpDt1');
 var Stripe = require('stripe')('sk_test_ePDSBK4YqUagVl3dkjzjpDt1');
  
-var stripeSecretKey = 'sk_test_ePDSBK4YqUagVl3dkjzjpDt1';
-var stripeBaseURL = 'api.stripe.com/v1';
+//var stripeSecretKey = 'sk_test_ePDSBK4YqUagVl3dkjzjpDt1';
+//var stripeBaseURL = 'api.stripe.com/v1';
  
 Parse.Cloud.define("saveStripeCustomerIdAndCharge", function (request, response) {
 
@@ -110,9 +110,26 @@ Parse.Cloud.define("stripeGetDefaultCard", function (request, response) {
         }
     });
 });
- 
+ */
 Parse.Cloud.define("stripeAddCardToCustomer", function (request, response) {
-    Parse.Cloud.httpRequest({
+var customerId = request.params.customerId;
+var token = request.params.tokenId;
+
+Stripe.customers.createSource(
+  customerId,
+  {source: token},
+  function(err, card) {
+
+    if (err){
+        response.error(err)
+    } else {
+        response.success(card);
+    }
+    // asynchronously called
+  }
+);
+
+   /* Parse.Cloud.httpRequest({
         method: "POST",
         url: "https://" + stripeSecretKey + ':@' + stripeBaseURL + "/customers/" + request.params.customerId + "/sources",
         body: "card=" + request.params.tokenId,
@@ -135,10 +152,10 @@ Parse.Cloud.define("stripeAddCardToCustomer", function (request, response) {
         error: function (httpResponse) {
             response.error('Request failed with response code ' + httpResponse.status);
         }
-    });
+    });*/
  
  
-});*/
+});
  
 Parse.Cloud.define("addRating", function (request, response) {
     var userId = request.params.user_id;
