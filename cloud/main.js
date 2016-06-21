@@ -3,8 +3,8 @@
 //Stripe.initialize('sk_test_ePDSBK4YqUagVl3dkjzjpDt1');
 var Stripe = require('stripe')('sk_test_ePDSBK4YqUagVl3dkjzjpDt1');
  
-//var stripeSecretKey = 'sk_test_ePDSBK4YqUagVl3dkjzjpDt1';
-//var stripeBaseURL = 'api.stripe.com/v1';
+var stripeSecretKey = 'sk_test_ePDSBK4YqUagVl3dkjzjpDt1';
+var stripeBaseURL = 'api.stripe.com/v1';
  
 Parse.Cloud.define("saveStripeCustomerIdAndCharge", function (request, response) {
 
@@ -15,59 +15,30 @@ Stripe.customers.create({
         if (err) {
             response.error(err)
         } else {
+             var saveId = request.user;
+            saveId.set("stripe_customer_id", success.id);
+            saveId.save(null,{"useMasterKey":true});
+           /* var query = new Parse.Query('User');
+            query.equalTo("objectId", user);
+            query.find({ sessionToken: token }).then(function(confirm) {
+            getUserToken.set("stripe_customer_id", user);
+            response.success(confirm);
+             });*/
             response.success(success)
 
         }
 
 }).then(function (customer) {
-    Stripe.charge.create({
+    Stripe.charges.create({
        amount: request.params.amount,
        currency: 'usd',
        customer: customer.id 
     });
+
 });
-   /* Stripe.Customers.create({
-        card: request.params.token,
-        description: request.params.description,
-        email: request.params.email
-    }, {
-        success: function (customer) {
- 
-            var User = request.user;
-            User.set("stripe_customer_id", customer.id);
-            User.save(null, {
-                success: function (customer) {
- 
-                    response.success("Customer saved to parse = " + User.get("email"));
-                },
-                error: function (customer, error) {
-                    response.error("Failed to save customer id to parse");
-                }
- 
-            });
- 
-        },
-        error: function (httpResponse) {
-            response.error("Error");
-        }
-    }).then(function (customer) {
-        return Stripe.Charges.create({
-            amount: request.params.amount,
-            currency: "usd",
-            customer: customer.id
-        }, {
-            success: function (results) {
-                response.success(results);
-            },
-            error: function (httpResponse) {
-                response.error(httpResponse);
-            }
-        });
-    });*/
 });
- 
 /*Parse.Cloud.define("stripeChargeCustomer", function(request, response) {
-      Stripe.Charges.create({
+      Stripe.charges.create({
       amount: request.params.amount,
       currency: "usd",
       customer: request.params.customerId,
@@ -81,9 +52,8 @@ Stripe.customers.create({
     }
   
 });
-});
- 
-Parse.Cloud.define("stripeDeleteCard", function (request, response) {
+});*/
+/*Parse.Cloud.define("stripeDeleteCard", function (request, response) {
     Parse.Cloud.httpRequest({
         method: "DELETE",
         url: "https://" + stripeSecretKey + ':@' + stripeBaseURL + "/customers/" + request.params.customerId + "/sources/" + request.params.cardId,
@@ -96,41 +66,39 @@ Parse.Cloud.define("stripeDeleteCard", function (request, response) {
             response.error('Request failed with response code ' + httpResponse.status);
         }
     });
-});
- 
+});*/
 Parse.Cloud.define("stripeGetDefaultCard", function (request, response) {
- 
-    Stripe.Customers.retrieve(request.params.customerId, {
-        expand: ["data.source"],
-        success: function (stripeCustomer) {
- 
-            console.log("Customer info received: " + JSON.stringify(stripeCustomer));
- 
+
+    var customerId = request.params.customerId;
+
+    Stripe.customers.retrieve(
+    customerId,
+    function(err, customer) {
+        if (err){
+            response.error(err)
+        }
+
+        else {
             var creditCardResponse = {
  
-                "id": stripeCustomer.id,
-                "cardId": stripeCustomer.sources.data[0].id,
-                "cardHolderEmail": stripeCustomer.email,
-                "cardBrand": stripeCustomer.sources.data[0].brand,
-                "cardLast4Digits": stripeCustomer.sources.data[0].last4
+                "id": customer.id,
+                "cardId": customer.sources.data[0].id,
+                "cardHolderEmail": customer.email,
+                "cardBrand": customer.sources.data[0].brand,
+                "cardLast4Digits": customer.sources.data[0].last4
  
             };
+
             response.success(creditCardResponse);
- 
-        }, error: function (error) {
- 
-            console.log("Failed to Fetch Stripe Customer for Stripe customerId: " + customerId);
-            console.log("error " + JSON.stringify(error));
- 
-            var error = new Parse.Error(Parse.Error.OTHER_CAUSE, "Fetch Stripe Customer Failed");
-            response.error(error);
- 
+            //response.success(customer)
         }
-    });
+    // asynchronously called
+  }
+);
  
 });
  
-Parse.Cloud.define("stripeCheckDuplicateToken", function (request, response) {
+/*Parse.Cloud.define("stripeCheckDuplicateToken", function (request, response) {
     Parse.Cloud.httpRequest({
         url: "https://" + stripeSecretKey + ':@' + stripeBaseURL + "/tokens/" + request.params.tokenId,
         success: function (card) {
